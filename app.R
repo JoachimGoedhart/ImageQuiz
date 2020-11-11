@@ -1,6 +1,7 @@
 # library(magick)
 library(dplyr)
 library(shiny)
+# library(shinycssloaders)
 
 # All emojis designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0
 # https://openmoji.org
@@ -26,15 +27,19 @@ ui <- fluidPage(
     mainPanel(
         tabsetPanel(
             tabPanel("Quiz",
-
                     absolutePanel(top = 60, left = 20, width = 350, draggable = F,
                         wellPanel(uiOutput(outputId = "image"),
+                        # wellPanel(withSpinner(uiOutput(outputId = "image")),
                             br(),
-                            radioButtons('choice','Choose the word that matches the best with the image', choices = list('A'), inline = F, selected = 'A'),
-                            actionButton("Submit", label="Submit Answer"),
-                            br(),
-                            br(),
-                            textOutput(outputId = "textR")
+                            radioButtons('choice','Choose the word that matches the best with the image', choices = list('none selected'='none'), inline = F, selected = 'none'),
+                            # br(),
+                        textOutput(outputId = "textR"),
+
+                        br(),
+                        verbatimTextOutput(outputId = "Feedback"),
+                        
+                        actionButton("Reset", label="Reset score"),
+                        br(),
                          ) #Close wellPanel
                       ), #Close absolutePanel
 
@@ -42,8 +47,7 @@ ui <- fluidPage(
             tabPanel("Settings",
                      br(),
                      radioButtons(inputId = 'imageSelection',label='Select type of Images', choices = list('Cells'='cells', 'Smileys'='faces', 'Flags'='flags'), inline = F, selected = 'cells'),
-                     numericInput(inputId = 'n_answers', label='number of answers', value =4, min = 1, max = 10, step = 1),
-                     actionButton("Reset", label="Reset score"),
+                     numericInput(inputId = 'n_answers', label='number of answers', value =4, min = 2, max = 10, step = 1),
                      NULL
             ),     #Close tabPanel
             tabPanel("About", includeHTML("about.html")
@@ -60,12 +64,12 @@ server <- function(session, input, output) {
 n <- 0
 n_correct <- 0
 tot <- 0.001
-    
+
 # Necessary for correct initialization
 observe({
       req(input$n_answers)
       choices <- generate_answers(filelist(), n, input$n_answers)
-      updateRadioButtons(session, "choice", choices = as.character(choices), inline = F, selected = character(0))
+      updateRadioButtons(session, "choice", choices = as.character(choices), inline = F, selected = 'none')
 })
     
 # Read list of files with images
@@ -73,30 +77,8 @@ filelist <- reactive ({
         subdir <- input$imageSelection
         filelist <-   list.files(path = paste0('./www/',subdir), pattern="*.png|*.jpg|*.jpeg|*.gif")
         n <<-  ceiling(runif(1, min=0, max=length(filelist))) 
-        observe({print(filelist)})
+        # observe({print(filelist)})
         return(filelist)
-    })
-      
-# Activated when answer is submitted
-observeEvent(input$Submit, {
-        # When correctly answered, randomly select a new image with possible answers
-        if (input$choice == correct_answer) {
-            n <<-  ceiling(runif(1, min=0, max=length(filelist())))
-            choices <- generate_answers(filelist(), n, input$n_answers)
-            updateRadioButtons(session, "choice", choices = as.character(choices), inline = F, selected = character(0))
-            observe({print("correct")})
-            n_correct <<- n_correct +1
-            tot <<- tot +1
-        # When incorrect, notify and wait for the next answer
-        } else if (input$choice != correct_answer){
-            observe({print("incorrect")})
-            tot <<- tot +1
-            showNotification(
-              sample(c('Try again', 'Nope', 'Keep trying','Grab another coffee', 'Keep trying', 'Consider google', 'Close, but not correct', 'Incorrect','Have another look',"Don't quit", "I don't think so"),1),
-              duration = 1, 
-              closeButton = F,
-              type = sample(c("default", "message", "warning", "error"),1))
-        }
     })
 
 # Function that generates a list of possible answers, consisting of 1 correct and several incorrect answers
@@ -105,28 +87,55 @@ generate_answers <- function(filelist, n, number_of_choices=4)  {
      answers <- gsub(files_noext, pattern="_.*", replacement="")
      #global update of the correct answer
      correct_answer <<- answers[n]
+     observe({print(paste0('generate answers:',correct_answer))})
      unique_answers <- unique(answers)
      if (number_of_choices < 2) {number_of_choices <- 2}
      if (number_of_choices > length(unique_answers)) {number_of_choices <- length(unique_answers)}
 
      wrong_answers <- unique_answers[unique_answers!=correct_answer]
      choices <- sample(c(sample(wrong_answers,(number_of_choices-1)),correct_answer),number_of_choices)
+     choices <- c(choices,'none')
      return(choices)
  }
 
 # Display the image 
 output$image<-renderUI({
-    input$Submit
+    if (input$choice == correct_answer) {
+      n_correct <<- n_correct +1
+      tot <<- tot +1
+      n <<-  ceiling(runif(1, min=0, max=length(filelist())))
+      choices <- generate_answers(filelist(), n, input$n_answers)
+      updateRadioButtons(session, "choice", choices = as.character(choices), inline = F, selected = 'none')
+      img(src=paste0(input$imageSelection,'/',filelist()[n]), width = '300px')
+    } else if (input$choice != correct_answer && input$choice != 'none') {
+      tot <<- tot +1
+      showNotification(
+        sample(c('Try again', 'Perseverance will pay off!', 'Nope...', 'Keep trying','Grab another coffee', 'Consider googling', 'Close, but not correct', 'Incorrect','Have another look',"Don't quit", "I don't think so"),1),
+        duration = 1, 
+        closeButton = F,
+        type = sample(c("default", "message", "warning", "error"),1))
+      img(src=paste0(input$imageSelection,'/',filelist()[n]), width = '300px')
+    } else if (input$choice != correct_answer && input$choice == 'none') {
     img(src=paste0(input$imageSelection,'/',filelist()[n]), width = '300px')
+    }
 })
+
+# Display feedback
+# output$Feedback <- renderText({
+#   if (input$choice !=correct_answer && input$choice !='none') {
+#     text <- sample(c('Try again!', 'Perseverance will pay off!','Nope...', 'Keep trying!','Grab another coffee', 'Consider googling', 'Close, but not correct', 'Incorrect','Have another look',"Don't quit!", "I don't think so"),1)
+#   }
+# })
 
 # Display the score
 output$textR <- renderText({
-    input$Submit
+  # observe({print(paste('Choice vs truth:',input$choice,correct_answer))})
+    input$choice
     input$Reset
-    paste0('Correct: ',n_correct,'/',round(tot),' = ',round(n_correct/tot*100),'%')
+    text <- paste0('Correct: ',n_correct,'/',round(tot),' = ',round(n_correct/tot*100),'%')
 })
 
+# Reset the score
 observeEvent(input$Reset, {
   n_correct <<- 0
   tot <<- 0.001
