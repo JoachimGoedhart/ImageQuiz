@@ -1,11 +1,9 @@
-# library(magick)
 library(dplyr)
 library(shiny)
 # library(shinycssloaders)
 
 # All emojis designed by OpenMoji – the open-source emoji and icon project. License: CC BY-SA 4.0
 # https://openmoji.org
-
 
 # Define UI
 ui <- fluidPage(
@@ -81,7 +79,7 @@ filelist <- reactive ({
         return(filelist)
     })
 
-# Function that generates a list of possible answers, consisting of 1 correct and several incorrect answers
+# Function that generates a list of randomized answers, consisting of 1 correct and several incorrect answers
 generate_answers <- function(filelist, n, number_of_choices=4)  {
      files_noext <- gsub(filelist, pattern="\\..*", replacement="")
      answers <- gsub(files_noext, pattern="_.*", replacement="")
@@ -98,7 +96,7 @@ generate_answers <- function(filelist, n, number_of_choices=4)  {
      return(choices)
  }
 
-# Display the image 
+# Display the image and display a new one if correctly answered
 output$image<-renderUI({
     if (input$choice == correct_answer) {
       n_correct <<- n_correct +1
