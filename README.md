@@ -2,8 +2,8 @@
 
 ImageQuiz is a shiny app that generates a multiple choice quiz. The quize tests the ability to identify images. Users can select the number of possible answers. The order of the answers is randomized. After a correct answer, a new image with possible answers is presented. In case of an incorrect answer, a notification appears to encourage the user to try again.
 
-<img src="ImageQuiz-Faces.png" width="200">
-<img src="https://github.com/JoachimGoedhart/ImageQuiz/blob/master/ImageQuiz-Flags.png" width="200">
+<img src="ImageQuiz-Faces.png" width="300">
+<img src="ImageQuiz-Flags.png" width="300">
 
 ### How the app generates the quiz
 
