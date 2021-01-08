@@ -44,8 +44,17 @@ ui <- fluidPage(
             ),     #Close tabPanel
             tabPanel("Settings",
                      br(),
-                     radioButtons(inputId = 'imageSelection',label='Select type of Images', choices = list('Cells'='cells', 'Smileys'='faces', 'Flags'='flags'), inline = F, selected = 'cells'),
+                     radioButtons(inputId = 'imageSelection',label='Select type of Images', choices = list('Cells'='Cells', 'Smileys'='faces', 'Flags'='flags'), inline = F, selected = 'Cells'),
                      numericInput(inputId = 'n_answers', label='number of answers', value =4, min = 2, max = 10, step = 1),
+                     hr(),
+                     h4('Image Credits:'),
+                     conditionalPanel(
+                       condition = "input.imageSelection=='cells'",p('Fluorescence images from the "GFP-cDNA Localisation Project": http://gfp-cdna.embl.de'),hr()),              
+                     conditionalPanel(
+                       condition = "input.imageSelection!='cells'",p('Pictures from OpenMoji - the open-source emoji and icon project: https://openmoji.org'),hr()),
+                     
+                     
+                     
                      NULL
             ),     #Close tabPanel
             tabPanel("About", includeHTML("about.html")
@@ -66,6 +75,13 @@ tot <- 0.001
 # Necessary for correct initialization
 observe({
       req(input$n_answers)
+  
+      imageSelection.selected <<- input$imageSelection
+      
+      #Read the names of subdirectories with images, these will used to generate a list with choices
+      dirlist <-  list.files(path = './www/',include.dirs = T)
+      updateRadioButtons(session, "imageSelection", choices = as.character(dirlist), inline = F, selected = imageSelection.selected)
+      
       choices <- generate_answers(filelist(), n, input$n_answers)
       updateRadioButtons(session, "choice", choices = as.character(choices), inline = F, selected = 'none')
 })
