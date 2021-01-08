@@ -29,7 +29,7 @@ ui <- fluidPage(
                         wellPanel(uiOutput(outputId = "image"),
                         # wellPanel(withSpinner(uiOutput(outputId = "image")),
                             br(),
-                            radioButtons('choice','Choose the word that matches the best with the image', choices = list('none selected'='none'), inline = F, selected = 'none'),
+                            radioButtons('choice','What is the best description:', choices = list('none selected'='none'), inline = F, selected = 'none'),
                             # br(),
                         textOutput(outputId = "textR"),
 
